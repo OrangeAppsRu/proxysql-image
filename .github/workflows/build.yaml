@@ -1,0 +1,23 @@
+name: build
+on:
+  push:
+    tags:
+      - '*.*.*'
+jobs:
+  docker-build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: build and publish tag to registry
+        env:
+          IMAGE: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          GITHUB_USER: ${{ github.repository_owner }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          image=`echo -n "${IMAGE}" | tr 'A-Z' 'a-z'`
+          echo "${image}:${TAG}"
+          
+          docker build --build-arg TAG=${TAG} -t ghcr.io/${image}:${TAG} .
+          docker login -u "${GITHUB_USER}" -p "${GITHUB_TOKEN}" ghcr.io
+          docker push ghcr.io/${image}:${TAG}
